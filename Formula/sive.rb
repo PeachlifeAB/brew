@@ -1,9 +1,8 @@
 class Sive < Formula
   desc "Sync secrets from your vault into your shell"
   homepage "https://github.com/PeachlifeAB/sive"
-  url "https://github.com/PeachlifeAB/sive/archive/36205c4aced6078bd06fbe7cec5b39b1a2cd3563.tar.gz"
-  version "0.1.0"
-  sha256 "55a15976cfeb2f47b592af3c3a79d69611a5a3db0b6bff3e2470a0e6039d1b3b"
+  url "https://github.com/PeachlifeAB/sive/archive/refs/tags/0.1.0.tar.gz"
+  sha256 "5a2c20ab2e78df86d18967efe231bae84b2465eff07465e0f2090f16450d4080"
   license "MIT"
 
   depends_on "python@3.13"
