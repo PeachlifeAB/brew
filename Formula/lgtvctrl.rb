@@ -7,19 +7,31 @@ class Lgtvctrl < Formula
   sha256 "4cf44bbda27c8828c6dc68e54ccb9dfc6852cdbad04fd943ef8d5efbdab16d72"
   license "MIT"
 
+  bottle do
+    root_url "https://github.com/PeachlifeAB/homebrew-tap/releases/download/lgtvctrl-0.1.0"
+    rebuild 1
+    sha256 cellar: :any_skip_relocation, arm64_tahoe: "e7669fd8c1e14ff14f4e8c32eb6c9ac25ad25b61d69a6647f441886966dff6ab"
+  end
+
   depends_on "python-setuptools" => :build
   depends_on :macos
   depends_on "openssl@3"
   depends_on "python@3.13"
 
+  # Build-only: poetry-core is the build backend for wakeonlan
+  resource "poetry-core" do
+    url "https://files.pythonhosted.org/packages/10/48/5b4f344c252ee2f75051b6bf7dfb68ab53aa00a107f5f8e5cbf795701dad/poetry_core-2.3.2.tar.gz"
+    sha256 "20cb71be27b774628da9f384effd9183dfceb53bcef84063248a8672aa47031f"
+  end
+
   resource "bscpylgtv" do
-    url "https://files.pythonhosted.org/packages/5f/e2/c0d3e0e8945783b58ee20d7855f285b9dcb1bf19cb44384b42c20afd533a/bscpylgtv-0.5.1-py3-none-any.whl"
-    sha256 "842a545ed19ed16b5fe9006184ef917ff88ed140219aea680aedd8b56375d52d"
+    url "https://files.pythonhosted.org/packages/95/f5/f66b98534a464fc80fcc5cd4e3375e734c31e276613fab1f199470bda01f/bscpylgtv-0.5.1.tar.gz"
+    sha256 "69cb7faea9024bfaac19844479e36c13515922d68c6e78885e5678514fe2640f"
   end
 
   resource "websockets" do
-    url "https://files.pythonhosted.org/packages/6f/28/258ebab549c2bf3e64d2b0217b973467394a9cea8c42f70418ca2c5d0d2e/websockets-16.0-py3-none-any.whl"
-    sha256 "1637db62fad1dc833276dded54215f2c7fa46912301a24bd94d45d46a011ceec"
+    url "https://files.pythonhosted.org/packages/04/24/4b2031d72e840ce4c1ccb255f693b15c334757fc50023e4db9537080b8c4/websockets-16.0.tar.gz"
+    sha256 "5f6261a5e56e8d5c42a4497b364ea24d94d9563e8fbd44e78ac40879c60179b5"
   end
 
   resource "sqlitedict" do
@@ -28,10 +40,12 @@ class Lgtvctrl < Formula
   end
 
   resource "wakeonlan" do
-    url "https://files.pythonhosted.org/packages/e9/47/99a02d847104bbc08d10b147e77593c127c405774fa7f5247afd152754e5/wakeonlan-3.1.0-py3-none-any.whl"
-    sha256 "9414da87f48e5dc8a1bb0fa15aba5a0079cfd014231c4cc8e6f2477a0d078c7e"
+    url "https://files.pythonhosted.org/packages/ec/98/b92125baeaf67b3a838bfdb4ac4e685c793ce2771686b10df44275e424a4/wakeonlan-3.1.0.tar.gz"
+    sha256 "aa12edc2587353528a89ad58a54c63212dc2a12226c186b7fcc02caa162cd962"
   end
 
+  # pyobjc packages use pre-built wheels because pyobjc 12.1 source fails
+  # to compile on macOS 15+ (CGWindowListCreateImageFromArray obsoleted).
   resource "pyobjc-core" do
     url "https://files.pythonhosted.org/packages/f4/d2/29e5e536adc07bc3d33dd09f3f7cf844bf7b4981820dc2a91dd810f3c782/pyobjc_core-12.1-cp313-cp313-macosx_10_13_universal2.whl"
     sha256 "01c0cf500596f03e21c23aef9b5f326b9fb1f8f118cf0d8b66749b6cf4cbb37a"
@@ -49,7 +63,6 @@ class Lgtvctrl < Formula
 
   def install
     # Remove setuptools-scm build requirement and use static version
-    # (setuptools-scm needs network access to install, which Homebrew blocks)
     inreplace "pyproject.toml" do |s|
       s.gsub! 'requires = ["setuptools>=80.0", "setuptools-scm>=8"]',
               'requires = ["setuptools>=80.0"]'
@@ -59,15 +72,18 @@ class Lgtvctrl < Formula
               "[project]\nname = \"lgtvctrl\"\nversion = \"#{version}\"\n"
 
     ENV["SETUPTOOLS_SCM_PRETEND_VERSION"] = version.to_s
-    venv = virtualenv_create(libexec, "python3.13")
+
     python = Formula["python@3.13"].opt_bin/"python3.13"
+    venv = virtualenv_create(libexec, "python3.13")
     venv_python = libexec/"bin/python"
 
-    # Install all wheel resources via cached_download.  Homebrew's
-    # resource.stage extracts .whl (zip) files, which breaks pip, so we
-    # symlink the cached download to a clean filename and pip-install that.
-    %w[pyobjc-core pyobjc-framework-Cocoa pyobjc-framework-Quartz
-       bscpylgtv websockets wakeonlan].each do |name|
+    # 1. Install poetry-core first (build backend for wakeonlan)
+    venv.pip_install resource("poetry-core"), build_isolation: false
+
+    # 2. Install pyobjc wheels via cached_download + symlink.
+    #    Platform-specific wheels (.whl) are zip archives that resource.stage
+    #    would extract, breaking pip.  Use cached_download to get the raw file.
+    %w[pyobjc-core pyobjc-framework-Cocoa pyobjc-framework-Quartz].each do |name|
       r = resource(name)
       r.fetch
       whl_link = buildpath/r.downloader.basename
@@ -76,16 +92,14 @@ class Lgtvctrl < Formula
              "install", "--no-deps", whl_link
     end
 
-    # sqlitedict is a single-file pure-Python package (no wheel on PyPI).
-    # Copy it directly into site-packages to avoid needing setuptools.
-    resource("sqlitedict").stage do
-      venv.site_packages.install "sqlitedict.py"
+    # 3. Install remaining pure Python/sdist resources
+    sdist_resources = resources.reject do |r|
+      %w[poetry-core pyobjc-core pyobjc-framework-Cocoa pyobjc-framework-Quartz].include?(r.name)
     end
+    venv.pip_install sdist_resources, build_isolation: false
 
-    # Install main package and link bin scripts.
-    # build_isolation: false uses setuptools from python-setuptools dep
-    # (available via --system-site-packages) instead of downloading from PyPI.
-    venv.pip_install_and_link(buildpath, build_isolation: false)
+    # 4. Install main package and link bin scripts
+    venv.pip_install_and_link buildpath, build_isolation: false
   end
 
   test do
