@@ -1,66 +1,66 @@
-# brew
+# PeachlifeAB Homebrew Tap
 
-Public Homebrew tap for PeachlifeAB.
+Public Homebrew tap for PeachlifeAB tools.
 
 ## Install
 
 ```bash
-brew tap PeachlifeAB/tap
+brew tap peachlifeab/tap
 ```
 
 ## Formulas
 
-### bgtail
-
-Run long-running commands detached with minimal heartbeat.
-
-```bash
-brew install PeachlifeAB/tap/bgtail
-```
-
 ### lgtvctrl
 
-Command-line control for LG WebOS TVs.
+Command-line control for LG WebOS TVs — power, input, screen, queries, and raw commands over WebSocket.
 
 ```bash
-brew install PeachlifeAB/tap/lgtvctrl
+brew install peachlifeab/tap/lgtvctrl
 ```
+
+Pre-built bottle available for Apple Silicon (arm64 Tahoe). Source: [PeachlifeAB/lgtvctrl](https://github.com/PeachlifeAB/lgtvctrl)
+
+### bgtail
+
+Run long-running commands detached with minimal heartbeat — background a command, reconnect later, get the log.
+
+```bash
+brew install peachlifeab/tap/bgtail
+```
+
+Source: [PeachlifeAB/bgtail](https://github.com/PeachlifeAB/bgtail)
 
 ### sive
 
 Sync secrets from your vault into your shell.
 
 ```bash
-brew install PeachlifeAB/tap/sive
+brew install peachlifeab/tap/sive
 ```
+
+Source: [PeachlifeAB/sive](https://github.com/PeachlifeAB/sive)
 
 ## Casks
 
-### hyprspace
+### Hyprspace
+
+Tiling window manager based on AeroSpace. Requires macOS 15 (Sequoia) or later.
 
 ```bash
-brew install --cask PeachlifeAB/tap/hyprspace
+brew install --cask peachlifeab/tap/hyprspace
 ```
+
+Homepage: [hyprspace.net](https://hyprspace.net/) · Source: [PeachlifeAB/hyprspace-core](https://github.com/PeachlifeAB/hyprspace-core) · Releases: [PeachlifeAB/hyprspace-releases](https://github.com/PeachlifeAB/hyprspace-releases)
 
 ## Update
 
 ```bash
-brew upgrade PeachlifeAB/tap/<name>
+brew upgrade peachlifeab/tap/<name>
 ```
 
 ## Uninstall
 
 ```bash
 brew uninstall <name>
-brew untap PeachlifeAB/tap
+brew untap peachlifeab/tap
 ```
-
-## Public release surfaces
-
-The Hyprspace source repository is open-source at `PeachlifeAB/hyprspace-core`. Public release artifacts and public-facing documentation live in the following places:
-
-- Releases and manual downloads: https://github.com/PeachlifeAB/hyprspace-releases
-- Legal disclosure: https://github.com/PeachlifeAB/hyprspace-releases/blob/main/LEGAL.md
-- License: https://github.com/PeachlifeAB/hyprspace-releases/blob/main/LICENSE
-
-For version-specific release notes and published zip assets, use the GitHub Releases page in `PeachlifeAB/hyprspace-releases`.
